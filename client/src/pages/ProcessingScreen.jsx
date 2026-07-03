@@ -18,7 +18,7 @@ export default function ProcessingScreen() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
 
-  const { file, jobDescription, jobTitle } = location.state || {};
+  const { file, jobDescription, jobTitle, requestId } = location.state || {};
 
   useEffect(() => {
     if (!file || !jobDescription) {
@@ -40,7 +40,8 @@ export default function ProcessingScreen() {
       }, 900);
 
       try {
-        const result = await analysisService.create(file, jobDescription, jobTitle);
+        // Pass an idempotency key to backend so duplicate submissions are ignored
+        const result = await analysisService.create(file, jobDescription, jobTitle, requestId);
         clearInterval(stepInterval);
         setCurrentStep(STEPS.length);
         setProgress(100);
@@ -48,6 +49,8 @@ export default function ProcessingScreen() {
         // Short pause to show completion
         setTimeout(() => {
           toast.success(`Analysis complete! ATS Score: ${result.analysis.atsScore}%`);
+          // Notify other pages that data changed so counts update immediately
+          try { window.dispatchEvent(new Event('riq:data-changed')); } catch (e) {}
           navigate(`/analysis/${result.analysis._id}/results`);
         }, 800);
       } catch (err) {

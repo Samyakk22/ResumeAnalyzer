@@ -19,6 +19,11 @@ const analysisSchema = new mongoose.Schema(
       default: 'Untitled Position',
       trim: true,
     },
+    requestId: {
+      type: String,
+      index: true,
+      sparse: true,
+    },
     resumeFile: {
       originalName: { type: String, required: true },
       filename: { type: String, required: true },
@@ -54,5 +59,8 @@ const analysisSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+  // Ensure (userId, requestId) uniqueness to prevent duplicate analyses
+  analysisSchema.index({ userId: 1, requestId: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('Analysis', analysisSchema);

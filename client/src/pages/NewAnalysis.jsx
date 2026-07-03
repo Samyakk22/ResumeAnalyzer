@@ -63,9 +63,10 @@ export default function NewAnalysis() {
 
     setAnalyzing(true);
     try {
+      const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       // Navigate to processing screen, carry the in-progress state
       navigate('/analysis/processing', {
-        state: { file, jobDescription, jobTitle },
+        state: { file, jobDescription, jobTitle, requestId },
       });
     } catch {
       setAnalyzing(false);

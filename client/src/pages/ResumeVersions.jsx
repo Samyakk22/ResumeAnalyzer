@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   FileText, TrendingUp, TrendingDown, ArrowRight, Calendar,
-  BarChart3, Download, Eye,
+  BarChart3, Eye,
 } from 'lucide-react';
 import { userService } from '../services/userService';
-import { reportService } from '../services/reportService';
 import { getScoreStatus, getScoreStrokeColor } from '../utils/scoreHelpers';
 import { formatDate, formatScoreChange } from '../utils/formatters';
 import toast from 'react-hot-toast';
@@ -47,6 +46,21 @@ export default function ResumeVersions() {
       }
     };
     fetchVersions();
+  }, []);
+
+  // Refresh versions when other parts of app change data
+  useEffect(() => {
+    const onChange = async () => {
+      try {
+        const data = await userService.getVersions();
+        setVersions(data.versions || []);
+        setSummary(data.summary);
+      } catch (err) {
+        // ignore
+      }
+    };
+    window.addEventListener('riq:data-changed', onChange);
+    return () => window.removeEventListener('riq:data-changed', onChange);
   }, []);
 
   if (loading) {

@@ -1,6 +1,5 @@
 const asyncHandler = require('express-async-handler');
 const Report = require('../models/Report');
-const { generatePDFReport } = require('../services/pdfGenerator');
 
 // @desc    Get all reports for user
 // @route   GET /api/reports
@@ -48,20 +47,7 @@ const downloadReport = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Report not found');
   }
-
-  // Build a pseudo-analysis object from report data for the generator
-  const analysisData = {
-    ...report.reportData,
-    jobTitle: report.jobTitle,
-    createdAt: report.createdAt,
-  };
-
-  const pdfBuffer = await generatePDFReport(analysisData, req.user);
-
-  const filename = `ResumeIQ-Report-${report.jobTitle?.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.send(pdfBuffer);
+  res.status(410).json({ success: false, message: 'PDF download removed' });
 });
 
 // @desc    Delete report
@@ -74,6 +60,7 @@ const deleteReport = asyncHandler(async (req, res) => {
     throw new Error('Report not found');
   }
   await report.deleteOne();
+  // no-op: client should refresh stats after deletion
   res.json({ success: true, message: 'Report deleted successfully' });
 });
 

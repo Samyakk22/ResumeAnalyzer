@@ -60,7 +60,6 @@ export default function Login() {
             {[
               '✓ Instant ATS Score Analysis',
               '✓ Track Resume Versions',
-              '✓ Download PDF Reports',
             ].map((item) => (
               <div key={item} className="flex items-center gap-3 text-white/90 text-sm">
                 <span>{item}</span>

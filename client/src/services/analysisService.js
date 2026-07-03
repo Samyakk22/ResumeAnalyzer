@@ -2,11 +2,12 @@ import api from './api';
 
 export const analysisService = {
   // Create new analysis (multipart form)
-  create: async (file, jobDescription, jobTitle) => {
+  create: async (file, jobDescription, jobTitle, requestId) => {
     const formData = new FormData();
     formData.append('resume', file);
     formData.append('jobDescription', jobDescription);
     if (jobTitle) formData.append('jobTitle', jobTitle);
+    if (requestId) formData.append('requestId', requestId);
 
     const { data } = await api.post('/analyses', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },

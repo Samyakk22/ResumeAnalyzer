@@ -85,6 +85,24 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
+  // Re-fetch stats when navigating back to dashboard to ensure counts are fresh
+  useEffect(() => {
+    const onVisibility = async () => {
+      try {
+        const statsRes = await userService.getStats();
+        setStats(statsRes.stats);
+      } catch (e) {
+        // ignore
+      }
+    };
+    window.addEventListener('focus', onVisibility);
+    window.addEventListener('riq:data-changed', onVisibility);
+    return () => {
+      window.removeEventListener('focus', onVisibility);
+      window.removeEventListener('riq:data-changed', onVisibility);
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="p-8 flex items-center justify-center min-h-96">
@@ -234,7 +252,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <p className="font-semibold text-gray-900 dark:text-white text-sm">View Reports</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Download PDF reports</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">View analysis reports</p>
               </div>
               <ArrowRight size={16} className="ml-auto text-gray-400 group-hover:text-purple-600 transition-colors" />
             </Link>

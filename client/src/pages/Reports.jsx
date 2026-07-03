@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FileBarChart2, Download, Trash2, Eye, Search, TrendingUp,
+  FileBarChart2, Trash2, Eye, Search, TrendingUp,
   Award, BarChart3, AlertTriangle, X,
 } from 'lucide-react';
 import { reportService } from '../services/reportService';
@@ -63,21 +63,17 @@ export default function Reports() {
   }, [search]);
 
   const handleDownload = async (report) => {
-    setDownloadingId(report._id);
-    try {
-      await reportService.download(report._id, report.jobTitle);
-      toast.success('Report downloaded!');
-    } catch {
-      toast.error('Download failed');
-    } finally {
-      setDownloadingId(null);
-    }
+    // PDF downloads removed — show message and no-op
+    toast.error('PDF download removed from the application');
   };
 
   const handleDelete = async () => {
     try {
       await reportService.delete(deleteTarget._id);
-      setReports((prev) => prev.filter((r) => r._id !== deleteTarget._id));
+      // Refresh list and dashboard stats after deletion
+      await fetchReports();
+      // notify other pages to refresh counts/stats
+      try { window.dispatchEvent(new Event('riq:data-changed')); } catch (e) {}
       toast.success('Report deleted');
     } catch {
       toast.error('Failed to delete report');
@@ -184,19 +180,7 @@ export default function Reports() {
                         <Eye size={16} />
                       </Link>
                     )}
-                    <button
-                      onClick={() => handleDownload(report)}
-                      disabled={downloadingId === report._id}
-                      id={`download-report-${report._id}`}
-                      className="p-2 rounded-lg text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors disabled:opacity-50"
-                      title="Download PDF"
-                    >
-                      {downloadingId === report._id ? (
-                        <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Download size={16} />
-                      )}
-                    </button>
+                    {/* PDF download removed */}
                     <button
                       onClick={() => setDeleteTarget(report)}
                       id={`delete-report-${report._id}`}

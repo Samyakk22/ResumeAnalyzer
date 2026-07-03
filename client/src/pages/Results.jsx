@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Download, PlusCircle, CheckCircle2, XCircle,
+  ArrowLeft, PlusCircle, CheckCircle2, XCircle,
   Lightbulb, TrendingUp, TrendingDown, ChevronDown, ChevronUp,
   BarChart3, Zap, FileText, Star,
 } from 'lucide-react';
 import { analysisService } from '../services/analysisService';
-import { reportService } from '../services/reportService';
 import { getScoreStatus, getScoreStrokeColor, getCircleDashOffset, getImpactColor, getScoreBarColor } from '../utils/scoreHelpers';
 import { formatDate } from '../utils/formatters';
 import toast from 'react-hot-toast';
@@ -113,22 +112,7 @@ export default function Results() {
   }, [id]);
 
   const handleDownload = async () => {
-    setDownloading(true);
-    try {
-      // Get the report ID for this analysis
-      const reportsData = await reportService.getAll();
-      const report = reportsData.reports?.find((r) => r.analysisId === id || r.analysisId?._id === id || r.analysisId === id);
-      if (report) {
-        await reportService.download(report._id, analysis.jobTitle);
-        toast.success('PDF report downloaded!');
-      } else {
-        toast.error('Report not found. Please check the Reports page.');
-      }
-    } catch {
-      toast.error('Failed to download report');
-    } finally {
-      setDownloading(false);
-    }
+    toast.error('PDF download removed from the application');
   };
 
   if (loading) {
@@ -167,18 +151,7 @@ export default function Results() {
             <PlusCircle size={16} />
             New Analysis
           </Link>
-          <button
-            id="results-download-btn"
-            onClick={handleDownload}
-            disabled={downloading}
-            className="btn-primary text-sm py-2.5"
-          >
-            {downloading ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <><Download size={16} /> Download PDF</>
-            )}
-          </button>
+          {/* Download removed */}
         </div>
       </div>
 
@@ -333,14 +306,7 @@ export default function Results() {
           <BarChart3 size={16} />
           View Version History
         </Link>
-        <button
-          onClick={handleDownload}
-          disabled={downloading}
-          className="btn-primary"
-        >
-          <Download size={16} />
-          Download PDF Report
-        </button>
+        {/* Download removed */}
       </div>
     </div>
   );

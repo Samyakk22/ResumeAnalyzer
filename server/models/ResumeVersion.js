@@ -39,5 +39,7 @@ const resumeVersionSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+// Ensure one ResumeVersion per Analysis
+resumeVersionSchema.index({ analysisId: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('ResumeVersion', resumeVersionSchema);

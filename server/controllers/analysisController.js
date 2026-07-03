@@ -26,6 +26,64 @@ const createAnalysis = asyncHandler(async (req, res) => {
   }
 
   const { jobDescription, jobTitle } = req.body;
+  const requestId = req.body.requestId;
+
+  // If requestId provided, attempt to return existing Analysis (idempotency)
+  if (requestId) {
+    const existingAnalysis = await Analysis.findOne({ userId: req.user._id, requestId });
+    if (existingAnalysis) {
+      // Ensure a ResumeVersion exists for this analysis (if earlier run was partially completed)
+      const existingVersion = await ResumeVersion.findOne({ analysisId: existingAnalysis._id });
+      if (!existingVersion) {
+        const versionCount = await ResumeVersion.countDocuments({ userId: req.user._id });
+        try {
+          await ResumeVersion.findOneAndUpdate(
+            { analysisId: existingAnalysis._id },
+            {
+              $setOnInsert: {
+                userId: req.user._id,
+                analysisId: existingAnalysis._id,
+                versionNumber: versionCount + 1,
+                jobTitle: existingAnalysis.jobTitle,
+                atsScore: existingAnalysis.atsScore,
+                resumeFile: existingAnalysis.resumeFile,
+                changes: existingAnalysis.improvements?.slice(0, 3) || [],
+                matchedSkillsCount: existingAnalysis.matchedSkills?.length || 0,
+                missingKeywordsCount: existingAnalysis.missingKeywords?.length || 0,
+              },
+            },
+            { upsert: true }
+          );
+        } catch (err) {
+          if (err && err.code !== 11000) throw err;
+        }
+      }
+      // Ensure a Report exists for this analysis
+      const existingReport = await Report.findOne({ analysisId: existingAnalysis._id });
+      if (!existingReport) {
+          try {
+            await Report.findOneAndUpdate(
+              { analysisId: existingAnalysis._id },
+              {
+                $setOnInsert: {
+                  userId: req.user._id,
+                  analysisId: existingAnalysis._id,
+                  jobTitle: existingAnalysis.jobTitle,
+                  reportData: {
+                    atsScore: existingAnalysis.atsScore,
+                    resumeFileName: existingAnalysis.resumeFile?.originalName || '',
+                  },
+                },
+              },
+              { upsert: true }
+            );
+          } catch (err) {
+            if (err && err.code !== 11000) throw err;
+          }
+        }
+      return res.status(200).json({ success: true, analysis: existingAnalysis });
+    }
+  }
   if (!jobDescription || jobDescription.trim().length < 50) {
     res.status(400);
     throw new Error('Please provide a valid job description (minimum 50 characters)');
@@ -55,6 +113,7 @@ const createAnalysis = asyncHandler(async (req, res) => {
   const analysis = await Analysis.create({
     userId: req.user._id,
     jobTitle: finalJobTitle,
+    requestId: requestId,
     resumeFile: {
       originalName: req.file.originalname,
       filename: req.file.filename,
@@ -68,30 +127,81 @@ const createAnalysis = asyncHandler(async (req, res) => {
     ...results,
   });
 
-  // Create resume version entry
-  const versionCount = await ResumeVersion.countDocuments({ userId: req.user._id });
-  await ResumeVersion.create({
-    userId: req.user._id,
-    analysisId: analysis._id,
-    versionNumber: versionCount + 1,
-    jobTitle: finalJobTitle,
-    atsScore: results.atsScore,
-    resumeFile: analysis.resumeFile,
-    changes: results.improvements.slice(0, 3),
-    matchedSkillsCount: results.matchedSkills.length,
-    missingKeywordsCount: results.missingKeywords.length,
-  });
+  // Create resume version entry with idempotency handled above via requestId
+  if (requestId) {
+    // If a version for this analysis already exists, avoid creating duplicates
+    const existing = await ResumeVersion.findOne({ analysisId: analysis._id });
+    if (!existing) {
+      const versionCount = await ResumeVersion.countDocuments({ userId: req.user._id });
+    try {
+      await ResumeVersion.findOneAndUpdate(
+        { analysisId: analysis._id },
+        {
+          $setOnInsert: {
+            userId: req.user._id,
+            analysisId: analysis._id,
+            versionNumber: versionCount + 1,
+            jobTitle: finalJobTitle,
+            atsScore: results.atsScore,
+            resumeFile: analysis.resumeFile,
+            changes: results.improvements.slice(0, 3),
+            matchedSkillsCount: results.matchedSkills.length,
+            missingKeywordsCount: results.missingKeywords.length,
+          },
+        },
+        { upsert: true }
+      );
+    } catch (err) {
+      if (err && err.code !== 11000) throw err;
+    }
+    }
+  } else {
+    // Backwards compatible: create version (no requestId provided)
+    const versionCount = await ResumeVersion.countDocuments({ userId: req.user._id });
+    try {
+      await ResumeVersion.findOneAndUpdate(
+        { analysisId: analysis._id },
+        {
+          $setOnInsert: {
+            userId: req.user._id,
+            analysisId: analysis._id,
+            versionNumber: versionCount + 1,
+            jobTitle: finalJobTitle,
+            atsScore: results.atsScore,
+            resumeFile: analysis.resumeFile,
+            changes: results.improvements.slice(0, 3),
+            matchedSkillsCount: results.matchedSkills.length,
+            missingKeywordsCount: results.missingKeywords.length,
+          },
+        },
+        { upsert: true }
+      );
+    } catch (err) {
+      if (err && err.code !== 11000) throw err;
+    }
+  }
 
   // Auto-create report
-  await Report.create({
-    userId: req.user._id,
-    analysisId: analysis._id,
-    jobTitle: finalJobTitle,
-    reportData: {
-      ...results,
-      resumeFileName: req.file.originalname,
-    },
-  });
+  try {
+    await Report.findOneAndUpdate(
+      { analysisId: analysis._id },
+      {
+        $setOnInsert: {
+          userId: req.user._id,
+          analysisId: analysis._id,
+          jobTitle: finalJobTitle,
+          reportData: {
+            ...results,
+            resumeFileName: req.file.originalname,
+          },
+        },
+      },
+      { upsert: true }
+    );
+  } catch (err) {
+    if (err && err.code !== 11000) throw err;
+  }
+
 
   res.status(201).json({ success: true, analysis });
 });

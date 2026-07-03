@@ -7,6 +7,7 @@ router.use(protect);
 
 router.get('/', getReports);
 router.get('/:id', getReport);
+// PDF download route removed — keep route present but handled in controller
 router.get('/:id/download', downloadReport);
 router.delete('/:id', deleteReport);
 
