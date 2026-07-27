@@ -23,40 +23,6 @@ ResumeIQ/
 └── server/          # Express backend
 ```
 
-## ⚡ Quick Start
-
-### Prerequisites
-- Node.js 18+
-- MongoDB (local) or MongoDB Atlas URI
-
-### 1. Configure Environment
-
-Edit `server/.env`:
-```env
-PORT=5000
-MONGO_URI=mongodb://localhost:27017/resumeiq
-JWT_SECRET=your_secret_here
-```
-
-### 2. Start Backend
-
-```bash
-cd server
-npm install
-npm run dev
-```
-
-Backend runs at: http://localhost:5000
-
-### 3. Start Frontend
-
-```bash
-cd client
-npm install
-npm run dev
-```
-
-Frontend runs at: http://localhost:5173
 
 ## 🔐 API Endpoints
 
@@ -73,14 +39,6 @@ Frontend runs at: http://localhost:5173
 | GET | /api/versions | Get resume versions |
 | PUT | /api/users/profile | Update profile |
 | PUT | /api/users/password | Change password |
-
-## 🏗️ Future Deployment
-
-Structured for Docker + Nginx + AWS EC2 + CI/CD:
-- Replace `server/uploads/` with AWS S3
-- Use MongoDB Atlas connection string
-- Add Nginx reverse proxy config
-- Add Dockerfile for both client and server
 
 ## 📊 ATS Score Calculation
 
